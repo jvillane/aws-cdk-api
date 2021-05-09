@@ -6,7 +6,7 @@ import { OpenApiDocument } from "../lib/aws-cdk-api.types";
 
 describe('aws-cdk-api', () => {
   
-  it('Simple Stack', async () => {
+  it('One endpoint', async () => {
     const api = await SwaggerParser.parse("./test/openapi-test.yaml") as OpenApiDocument;
     console.log('api', JSON.stringify(api));
     const app = new cdk.App();

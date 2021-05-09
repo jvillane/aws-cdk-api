@@ -1,12 +1,12 @@
 import * as core from '@aws-cdk/core';
+import * as logs from "@aws-cdk/aws-logs";
 import * as lambda from "@aws-cdk/aws-lambda";
-import * as iam from "@aws-cdk/aws-iam";
 import { camelize, requestTemplate } from "./aws-cdk-api-stack.service";
 import { OpenApiOperation } from "./aws-cdk-api.types";
 
 export class AwsCdkApiLambda extends core.Construct {
   
-  public readonly alias: lambda.Alias;
+  public readonly lambdaFn: lambda.Function;
   
   constructor(scope: core.Construct, id: string, path: string, operation: OpenApiOperation) {
     super(scope, id);
@@ -16,12 +16,13 @@ export class AwsCdkApiLambda extends core.Construct {
     const { handler } = operation['x-aws-cdk-api'];
     const functionName = `${id}-${handler.toLowerCase().replace('.', '-')}`;
     const logicalId = camelize(functionName);
-    const role = new iam.Role(this, `${functionName}-role`, {
-      roleName: `${functionName}-role`,
-      assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
-      path: '/'
+  
+    const logGroup = new logs.LogGroup(this, `FunctionLogGroup`, {
+      logGroupName: `/aws/lambda/${functionName}`,
+      retention: logs.RetentionDays.ONE_WEEK,
+      removalPolicy: core.RemovalPolicy.DESTROY
     });
-    const lambdaFn = new lambda.Function(
+    this.lambdaFn = new lambda.Function(
       this,
       functionName,
       {
@@ -29,27 +30,12 @@ export class AwsCdkApiLambda extends core.Construct {
         runtime: lambda.Runtime.NODEJS_12_X,
         code: lambda.Code.fromAsset('src'),
         timeout: core.Duration.seconds(5),
-        handler,
-        role
+        handler
       }
     );
-    const forceLambdaFn = lambdaFn.node.defaultChild as lambda.CfnFunction;
+    const forceLambdaFn = this.lambdaFn.node.defaultChild as lambda.CfnFunction;
     forceLambdaFn.overrideLogicalId(logicalId);
-    
-    role.addToPolicy(new iam.PolicyStatement({
-      effect: iam.Effect.ALLOW,
-      actions: [
-        'logs:CreateLogGroup',
-        'logs:CreateLogStream',
-        'logs:PutLogEvents',
-      ],
-      resources: [ 'arn:aws:logs:*:*:log-group:/aws/lambda/*:*:*' ],
-    }));
-  
-    this.alias = new lambda.Alias(this, `FunctionAlias`, {
-      aliasName: 'stable',
-      version: lambdaFn.currentVersion
-    });
+    logGroup.grantWrite(this.lambdaFn);
     
     delete operation['x-aws-cdk-api'];
     operation['x-amazon-apigateway-integration'] = {
@@ -73,6 +59,5 @@ export class AwsCdkApiLambda extends core.Construct {
         }
       }
     }
-    console.log('operation', operation);
   }
 }

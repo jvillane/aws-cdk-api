@@ -21,9 +21,9 @@ export function requestTemplate(path: string) {
     match && pathVars.push(match[1]);
     path = path.substring(match.index + match[0].length);
   }
-  const lines = pathVars.map(value => `"${value}": $input.params().path.get('${value}')`);
-  lines.push(`#if($input.body == "") "body": $input.json('$') #end`);
-  return `{ ${lines.join(', ')} }`;
+  const pathParams = pathVars.map(value => `"${value}": $input.params().path.get('${value}')`);
+  const body = `#if($input.body == ""), "body": $input.json('$') #end`;
+  return `{ ${pathParams.join(', ')}${body} }`;
 }
 
 export function camelize(text: string) {

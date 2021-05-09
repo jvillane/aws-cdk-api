@@ -28,7 +28,7 @@ export class AwsCdkApiStack extends core.Stack {
       }
     }
     
-    console.log('transformedApi', JSON.stringify(openapi));
+    //console.log('transformedApi', JSON.stringify(openapi));
     const restApi = new apigateway.SpecRestApi(this, "cdk-api-apigateway", {
       restApiName: `${id}-api`,
       apiDefinition: apigateway.ApiDefinition.fromInline(openapi),
@@ -40,11 +40,7 @@ export class AwsCdkApiStack extends core.Stack {
       }
     });
     for(const lambda of lambdas) {
-      lambda.alias.addPermission('AllowApiGatewayInvoke', {
-        principal: new iam.ServicePrincipal('apigateway.amazonaws.com'),
-        action: 'lambda:InvokeFunction',
-        sourceArn: restApi.deploymentStage.restApi.arnForExecuteApi()
-      })
+      lambda.lambdaFn.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'))
     }
     // The code that defines your stack goes here
   }
