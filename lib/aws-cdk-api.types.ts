@@ -22,4 +22,5 @@ export interface CustomProperties {
 }
 
 export type OpenApiDocument = OpenAPIV3.Document<CustomProperties>;
+export type OpenApiMethod = OpenAPIV3.HttpMethods;
 export type OpenApiOperation = OpenAPIV3.OperationObject<CustomProperties>;
