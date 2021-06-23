@@ -42,7 +42,7 @@ export class AwsCdkApiStack extends core.Stack {
           continue;
         //console.log(pathKey, method, JSON.stringify(methodData, null, 2));
         const lambda = new AwsCdkApiLambda(this, id, method, path, operation);
-        lambda.lambdaFn.grantInvoke(principal)
+        lambda.lambdaFn.grantInvoke(principal);
         //lambda.alias.addPermission(`${lambda.name}-permission`, {
         //  principal,
         //  action: 'lambda:InvokeFunction',
